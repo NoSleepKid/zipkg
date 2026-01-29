@@ -1,63 +1,97 @@
 #!/bin/bash
-
 set -euo pipefail
 
+AUR_URL="https://aur.archlinux.org"
+BUILD_DIR=""
+
 usage() {
-    echo "Usage:"
-    echo "  zipkg -i <package>   Install package from AUR"
-    echo "  zipkg -r <package>   Remove package"
+    cat <<EOF
+Usage:
+  zipkg -i <package>        Install package from AUR
+  zipkg -r <package>        Remove package
+  zipkg --tui               Use dmenu TUI
+EOF
     exit 1
 }
 
-func_main() {
-    [[ $# -lt 2 ]] && usage
+cleanup() {
+    [[ -n "${BUILD_DIR:-}" && -d "$BUILD_DIR" ]] && rm -rf "$BUILD_DIR"
+}
+trap cleanup EXIT
 
-    action="$1"
-    package="$2"
-
-    [[ -z "$package" ]] && {
-        echo "Error: Package name cannot be empty."
+require() {
+    command -v "$1" >/dev/null 2>&1 || {
+        echo "Error: '$1' is required but not installed."
         exit 1
     }
+}
 
-    case "$action" in
-        -i)
-            if [ -d "$package" ]; then
-                echo "Warning: Directory $package already exists. Removing it."
-                sudo rm -rf "$package" || {
-                    echo "Error: Failed to remove existing directory $package."
-                    exit 1
-                }
-            fi
+tui_menu() {
+    require dmenu
 
-            git clone "https://aur.archlinux.org/$package.git" "$package" || {
-                echo "Error: Failed to clone the repository."
-                exit 1
-            }
+    choice=$(printf "install\nremove\n" | dmenu -i -p "Action:")
+    [[ -z "$choice" ]] && exit 0
 
-            (
-                cd "$package" || exit 1
-                makepkg -si || {
-                    echo "Error: Failed to build or install the package."
-                    exit 1
-                }
-            )
+    pkg=$(echo "" | dmenu -i -p "Package name:")
+    [[ -z "$pkg" ]] && exit 0
 
-            rm -rf "$package" || {
-                echo "Error: Failed to remove $package directory."
-                exit 1
-            }
+    case "$choice" in
+        install) action="-i" ;;
+        remove)  action="-r" ;;
+        *) exit 1 ;;
+    esac
+}
+
+install_pkg() {
+    local package="$1"
+
+    if pacman -Qi "$package" &>/dev/null; then
+        echo "Info: $package is already installed."
+        exit 0
+    fi
+
+    require git
+    require makepkg
+
+    BUILD_DIR=$(mktemp -d -t zipkg-XXXX)
+    git clone "$AUR_URL/$package.git" "$BUILD_DIR/$package"
+
+    (
+        cd "$BUILD_DIR/$package"
+        makepkg -si --needed
+    )
+}
+
+remove_pkg() {
+    sudo pacman -Rns "$1"
+}
+
+[[ $# -eq 0 ]] && usage
+
+action=""
+package=""
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -i|-r)
+            action="$1"
+            package="${2:-}"
+            shift 2
             ;;
-        -r)
-            sudo pacman -Rns "$package" || {
-                echo "Error: Failed to remove package $package."
-                exit 1
-            }
+        --tui)
+            tui_menu
+            shift
             ;;
         *)
             usage
             ;;
     esac
-}
+done
 
-func_main "$@"
+[[ -z "${action:-}" || -z "${package:-}" ]] && usage
+
+case "$action" in
+    -i) install_pkg "$package" ;;
+    -r) remove_pkg "$package" ;;
+    *) usage ;;
+esac
