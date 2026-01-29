@@ -23,4 +23,4 @@ Rather than replacing existing tools, zipkg acts as a thin layer on top of the A
 ```bash
 zipkg [option] <package>
 ```
-![Test Image 8](https://raw.githubusercontent.com/tograh/testrepository/master/3DTest.png)
+![Usage image 1](image.png)
