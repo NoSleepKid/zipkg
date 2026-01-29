@@ -37,6 +37,9 @@ install_pkg() {
     require git
     require makepkg
 
+    printf "\n"
+    sudo -v
+
     BUILD_DIR=$(mktemp -d -t zipkg-XXXX)
     git clone "$AUR_URL/$1.git" "$BUILD_DIR/$1" &>/dev/null
 
