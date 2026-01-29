@@ -29,6 +29,7 @@ Options:
 
 * `-i` Install a package by name
 * `-r` Uninstall a package
+* `--tui` Use the user friendly TUI zipkg provides
 
 ## Contributing
 
