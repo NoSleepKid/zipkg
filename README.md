@@ -54,10 +54,6 @@ yay -S zipkg
 ```
 Simply launch **zipkg** by using ```zipkg```. This will initialize everything and then you can use it from there. 
 
-## Configuration
-
-place the holder
-
 ## Contributing
 
 zipkg welcomes **developers, power users, and curious nerds**.
