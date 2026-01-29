@@ -12,7 +12,7 @@
 > zipkg may work with manual modifications, but it is **not officially supported** outside of Arch-based systems.  
 > Expect breakage, missing features, and zero guarantees.
 
-zipkg is a lightweight, low-level package manager written in **C**, built specifically for Arch Linux and Arch-based distributions.  
+zipkg is a lightweight, low-level package manager written in **bash**, built specifically for Arch Linux and Arch-based distributions.  
 It is designed to be fast, minimal, and script-friendly while staying true to Arch’s philosophy of simplicity and user control.
 
 When running on Arch Linux, zipkg integrates directly with the **Arch User Repository (AUR)**, allowing access to both official repository packages and community-maintained AUR packages through a single, consistent interface.
