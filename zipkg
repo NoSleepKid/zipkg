@@ -7,9 +7,9 @@ BUILD_DIR=""
 usage() {
     cat <<EOF
 Usage:
-  zipkg -i <package>        Install package from AUR
-  zipkg -r <package>        Remove package
-  zipkg --tui               Use dmenu TUI
+  zipkg -i <package>
+  zipkg -r <package>
+  zipkg --tui
 EOF
     exit 1
 }
@@ -20,44 +20,37 @@ cleanup() {
 trap cleanup EXIT
 
 require() {
-    command -v "$1" >/dev/null 2>&1 || {
-        echo "Error: '$1' is required but not installed."
-        exit 1
-    }
+    command -v "$1" >/dev/null 2>&1 || exit 1
 }
 
 tui_menu() {
-    require dmenu
+    require fzf
+    require pacman
 
-    choice=$(printf "install\nremove\n" | dmenu -i -p "Action:")
-    [[ -z "$choice" ]] && exit 0
+    action=$(printf "install\nremove\n" | fzf --prompt="action > " --height=40% --border)
+    [[ -z "$action" ]] && exit 0
 
-    pkg=$(echo "" | dmenu -i -p "Package name:")
-    [[ -z "$pkg" ]] && exit 0
+    if [[ "$action" == "remove" ]]; then
+        package=$(pacman -Qq | fzf --prompt="package > " --height=80% --border)
+        action="-r"
+    else
+        package=$(printf "" | fzf --prompt="AUR package > " --print-query --height=40% --border | head -n1)
+        action="-i"
+    fi
 
-    case "$choice" in
-        install) action="-i" ;;
-        remove)  action="-r" ;;
-        *) exit 1 ;;
-    esac
+    [[ -z "$package" ]] && exit 0
 }
 
 install_pkg() {
-    local package="$1"
-
-    if pacman -Qi "$package" &>/dev/null; then
-        echo "Info: $package is already installed."
-        exit 0
-    fi
+    pacman -Qi "$1" &>/dev/null && exit 0
 
     require git
     require makepkg
 
     BUILD_DIR=$(mktemp -d -t zipkg-XXXX)
-    git clone "$AUR_URL/$package.git" "$BUILD_DIR/$package"
-
+    git clone "$AUR_URL/$1.git" "$BUILD_DIR/$1"
     (
-        cd "$BUILD_DIR/$package"
+        cd "$BUILD_DIR/$1"
         makepkg -si --needed
     )
 }
