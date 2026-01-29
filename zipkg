@@ -19,7 +19,7 @@ spinner() {
     local i=0
     tput civis
     while kill -0 "$pid" 2>/dev/null; do
-        i=$(( (i+1) %4 ))
+        i=$(( (i + 1) % 4 ))
         printf "\r[%c] Installing..." "${spin:$i:1}"
         sleep 0.1
     done
@@ -61,17 +61,25 @@ main_menu() {
     require fzf
 
     while true; do
-        action=$(printf "install\nremove\nexit\n" | fzf --prompt="zipkg > " --height=40% --border)
-        [[ -z "$action" || "$action" == "exit" ]] && exit 0
+        action=$(printf "install\nremove\nexit\n" | fzf --prompt="zipkg > " --height=40% --border) || true
+        [[ -z "${action:-}" || "$action" == "exit" ]] && exit 0
 
         case "$action" in
             install)
-                package=$(printf "" | fzf --print-query --prompt="AUR package > " --height=40% --border | head -n1)
+                package=$(
+                    printf "" | fzf \
+                        --print-query \
+                        --prompt="AUR package > " \
+                        --height=40% \
+                        --border \
+                        || true
+                )
+                package=$(printf "%s\n" "$package" | head -n1)
                 [[ -n "$package" ]] && install_pkg "$package"
                 ;;
             remove)
-                package=$(pacman -Qq | fzf --prompt="remove > " --height=80% --border)
-                [[ -n "$package" ]] && remove_pkg "$package"
+                package=$(pacman -Qq | fzf --prompt="remove > " --height=80% --border) || true
+                [[ -n "${package:-}" ]] && remove_pkg "$package"
                 ;;
         esac
     done
