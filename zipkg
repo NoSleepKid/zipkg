@@ -4,16 +4,6 @@ set -euo pipefail
 AUR_URL="https://aur.archlinux.org"
 BUILD_DIR=""
 
-usage() {
-    cat <<EOF
-Usage:
-  zipkg -i <package>
-  zipkg -r <package>
-  zipkg --tui
-EOF
-    exit 1
-}
-
 cleanup() {
     [[ -n "${BUILD_DIR:-}" && -d "$BUILD_DIR" ]] && rm -rf "$BUILD_DIR"
 }
@@ -23,68 +13,74 @@ require() {
     command -v "$1" >/dev/null 2>&1 || exit 1
 }
 
-tui_menu() {
-    require fzf
-    require pacman
-
-    action=$(printf "install\nremove\n" | fzf --prompt="action > " --height=40% --border)
-    [[ -z "$action" ]] && exit 0
-
-    if [[ "$action" == "remove" ]]; then
-        package=$(pacman -Qq | fzf --prompt="package > " --height=80% --border)
-        action="-r"
-    else
-        package=$(printf "" | fzf --prompt="AUR package > " --print-query --height=40% --border | head -n1)
-        action="-i"
-    fi
-
-    [[ -z "$package" ]] && exit 0
+spinner() {
+    local pid=$1
+    local spin='-\|/'
+    local i=0
+    tput civis
+    while kill -0 "$pid" 2>/dev/null; do
+        i=$(( (i+1) %4 ))
+        printf "\r[%c] Installing..." "${spin:$i:1}"
+        sleep 0.1
+    done
+    printf "\r"
+    tput cnorm
 }
 
 install_pkg() {
-    pacman -Qi "$1" &>/dev/null && exit 0
+    pacman -Qi "$1" &>/dev/null && {
+        printf "Already installed: %s\n" "$1"
+        sleep 1
+        return
+    }
 
     require git
     require makepkg
 
     BUILD_DIR=$(mktemp -d -t zipkg-XXXX)
-    git clone "$AUR_URL/$1.git" "$BUILD_DIR/$1"
+    git clone "$AUR_URL/$1.git" "$BUILD_DIR/$1" &>/dev/null
+
     (
         cd "$BUILD_DIR/$1"
-        makepkg -si --needed
-    )
+        makepkg -si --needed --noconfirm &>/dev/null
+    ) &
+    pid=$!
+    spinner "$pid"
+    wait "$pid"
+
+    printf "Finished installation of %s\n" "$1"
+    sleep 1
 }
 
 remove_pkg() {
     sudo pacman -Rns "$1"
+    sleep 1
 }
 
-[[ $# -eq 0 ]] && usage
+main_menu() {
+    require fzf
 
-action=""
-package=""
+    while true; do
+        action=$(printf "install\nremove\nexit\n" | fzf --prompt="zipkg > " --height=40% --border)
+        [[ -z "$action" || "$action" == "exit" ]] && exit 0
 
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-        -i|-r)
-            action="$1"
-            package="${2:-}"
-            shift 2
-            ;;
-        --tui)
-            tui_menu
-            shift
-            ;;
-        *)
-            usage
-            ;;
-    esac
-done
+        case "$action" in
+            install)
+                package=$(printf "" | fzf --print-query --prompt="AUR package > " --height=40% --border | head -n1)
+                [[ -n "$package" ]] && install_pkg "$package"
+                ;;
+            remove)
+                package=$(pacman -Qq | fzf --prompt="remove > " --height=80% --border)
+                [[ -n "$package" ]] && remove_pkg "$package"
+                ;;
+        esac
+    done
+}
 
-[[ -z "${action:-}" || -z "${package:-}" ]] && usage
+[[ "${1:-}" == "--tui" ]] && main_menu
 
-case "$action" in
-    -i) install_pkg "$package" ;;
-    -r) remove_pkg "$package" ;;
-    *) usage ;;
+case "${1:-}" in
+    -i) install_pkg "${2:-}" ;;
+    -r) remove_pkg "${2:-}" ;;
+    *) main_menu ;;
 esac
