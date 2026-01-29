@@ -29,10 +29,6 @@ Options:
 
 * `-i` Install a package by name
 * `-r` Uninstall a package
-* `-s` Search for a package
-
-this screenshot shows the utilization of zipackage
-![zipkg usage example](image.png)
 
 ## Contributing
 
