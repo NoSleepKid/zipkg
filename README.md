@@ -43,3 +43,32 @@ If you want to:
 
 Feel free to **fork the project** or submit a **pull request**.
 Clean code, clear intent, and practical changes are always appreciated.
+
+## Installation (For arch and other arch based distros)
+zipkg is actually not that hard to install, Funnily enough the installation
+process is just a simple command with **yay**.
+
+### Use this command to install:
+```bash
+yay -S zipkg
+```
+Simply launch **zipkg** by using ```zipkg```. This will initialize everything and then you can use it from there. 
+
+## Configuration
+
+place the holder
+
+## Contributing
+
+zipkg welcomes **developers, power users, and curious nerds**.
+
+If you want to:
+
+* Improve performance
+* Add features
+* Fix bugs
+* Experiment with other distributions
+
+Feel free to **fork the project** or submit a **pull request**.
+Clean code, clear intent, and practical changes are always appreciated.
+
