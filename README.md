@@ -9,7 +9,7 @@
 
 > [!NOTE]
 > **Other Linux distributions:**  
-> zipkg may work with manual modifications, but it is **not officially supported** outside of Arch-based systems.  
+> zipkg is not **officially supported** outside of Arch-based systems; due to it being a aur helper.
 > Expect breakage, missing features, and zero guarantees.
 
 zipkg is a lightweight, low-level package manager written in **bash**, built specifically for Arch Linux and Arch-based distributions.  
@@ -18,6 +18,10 @@ It is designed to be fast, minimal, and script-friendly while staying true to Ar
 When running on Arch Linux, zipkg integrates directly with the **Arch User Repository (AUR)**, allowing access to both official repository packages and community-maintained AUR packages through a single, consistent interface.
 
 Rather than reinventing the wheel, zipkg acts as a thin layer on top of the existing Arch package ecosystem, focusing on clarity, speed, and automation without unnecessary abstraction.
+
+## Dependencies
+```fzf```
+```base-devel```
 
 ## Usage
 
